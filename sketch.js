@@ -23,9 +23,15 @@ let currentIndex = 0;
 let scanY = -80; // 扫描线初始在画面上方
 
 function setup() {
-  createCanvas(900, 550);
+  // ✅ 改成全屏
+  createCanvas(windowWidth, windowHeight);
   noStroke();
   textFont("sans-serif");
+}
+
+// ✅ 新增：窗口大小变化时自适应
+function windowResized() {
+  resizeCanvas(windowWidth, windowHeight);
 }
 
 function draw() {
@@ -94,7 +100,7 @@ function heatColor(t) {
 // -------- 中间物件 + 热圈 + 扫描显现 --------
 function drawHeatCore(item, index) {
   push();
-  translate(width / 2, height / 2);
+  translate(width / 2, height / 2); // ✅ 始终用 width/2, height/2 居中
   rectMode(CENTER);
 
   let baseHeat = item.heat;
@@ -110,9 +116,9 @@ function drawHeatCore(item, index) {
 
   // ------- 物件本体 -------
   if (index === 0) {
-    // ======= 老干妈（新版：无粉色、更瘦、更抽象） =======
-    let bottleColor = color(160, 20, 20);     // 深红
-    let chiliColor  = color(110, 0, 0);       // 深褐红
+    // ======= 老干妈（瘦一点、无粉色） =======
+    let bottleColor = color(160, 20, 20);
+    let chiliColor  = color(110, 0, 0);
     let oilColor    = color(255, 220, 170, 180);
     let capColor    = color(200, 40, 40);
     let labelColor  = color(255, 200, 60, 230);
@@ -120,27 +126,21 @@ function drawHeatCore(item, index) {
     let bodyW = 110;
     let bodyH = 260;
 
-    // 玻璃瓶身
     fill(bottleColor);
     rect(0, 40, bodyW, bodyH, 40);
 
-    // 辣椒主体（深红，不要粉色）
     fill(chiliColor);
     rect(0, 95, bodyW * 0.78, bodyH * 0.5, 28);
 
-    // 油层
     fill(oilColor);
     ellipse(0, -5, bodyW * 0.8, 46);
 
-    // 瓶盖
     fill(capColor);
     rect(0, -60, bodyW * 0.45, 26, 6);
 
-    // 标签
     fill(labelColor);
     rect(0, 35, bodyW * 0.85, bodyH * 0.25, 18);
 
-    // 商标热点（更小、更淡、更抽象）
     fill(255, 220, 180, 150);
     ellipse(0, 35, 22, 22);
     fill(200, 130, 60, 90);
@@ -322,5 +322,3 @@ function keyPressed() {
   }
   scanY = -80; // 重置扫描线
 }
-
-
