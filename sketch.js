@@ -1,35 +1,66 @@
 // ====== Thermal Memory Scanner / 家乡物件热感扫描仪 ======
 
-// 0: 老干妈   1: 小狗娃娃   2: 拍立得
+// 0: 老干妈   1: 小狗娃娃   2: 拍立得   3: 化妆袋   4: 鼻炎喷雾   5: 创可贴
 let items = [
   {
     name: "Chili Sauce",
     heat: 1.0,
-    text: "The moment I open this can and breathe is its familiar spicy warmth, I'm reminded of home in the simplest,most reliable way"
+    text: "The moment I open this can and breathe its familiar spicy warmth, I'm reminded of home in the simplest, most reliable way."
   },
   {
     name: "Doll",
     heat: 0.8,
-    text: "“Since 2022, she’s been my silent bedside companion—steady, wordless, and always there when I reach out in a place that never quite feels like home.”"
+    text: "Since 2022, she’s been my silent bedside companion—steady, wordless, and always there when I reach out in a place that never quite feels like home."
   },
   {
     name: "Polaroid camera",
     heat: 0.7,
     text: "She captures not scenery but small, precious moments—faces, meals, smiles—that I hope will one day become the quiet backups of my future memories."
+  },
+  {
+    name: "Makeup bag",
+    heat: 0.65,
+    text: "Stuffed with brushes, colors, and tiny tools, it’s the first thing I reach for when I need to rebuild a version of myself before going out into a new city."
+  },
+  {
+    name: "Nasal spray",
+    heat: 0.55,
+    text: "It sits quietly on my desk, half medical, half emotional—a small reminder that even in a foreign place, I’m still being taken care of in the ways I’m used to."
+  },
+  {
+    name: "Bandage strips",
+    heat: 0.6,
+    text: "They patch up small cuts and blisters from rushing between two lives, tiny squares of care that travel with me wherever I go."
   }
 ];
 
 let currentIndex = 0;
 let scanY = -80; // 扫描线初始在画面上方
 
+// 🔹 图片变量（6 个物件）
+let imgLaoganma;
+let imgToy;
+let imgPolaroid;
+let imgHuazhuangdai;
+let imgBiyan;
+let imgChuangketie;
+
+// 🔹 预加载图片（注意文件名要和左侧完全一致）
+function preload() {
+  imgLaoganma = loadImage("laoganma.png");
+  imgToy = loadImage("toy.png");
+  imgPolaroid = loadImage("polaroid.png");
+  imgHuazhuangdai = loadImage("huazhuangdai.png");
+  imgBiyan = loadImage("biyan.png");
+  imgChuangketie = loadImage("chuangketie.png");
+}
+
 function setup() {
-  // ✅ 改成全屏
   createCanvas(windowWidth, windowHeight);
   noStroke();
   textFont("sans-serif");
 }
 
-// ✅ 新增：窗口大小变化时自适应
 function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
 }
@@ -53,9 +84,18 @@ function drawThermalBackground(index) {
   } else if (index === 1) {
     topC = color(40, 0, 60);
     bottomC = color(200, 70, 140);
-  } else {
+  } else if (index === 2) {
     topC = color(0, 25, 70);
     bottomC = color(0, 130, 190);
+  } else if (index === 3) {
+    topC = color(60, 10, 50);
+    bottomC = color(230, 120, 150);
+  } else if (index === 4) {
+    topC = color(0, 30, 80);
+    bottomC = color(0, 160, 150);
+  } else {
+    topC = color(40, 15, 10);
+    bottomC = color(210, 140, 80);
   }
 
   for (let y = 0; y < height; y += 4) {
@@ -77,173 +117,66 @@ function drawThermalBackground(index) {
   }
 }
 
-// -------- 热成像调色盘 --------
-function heatColor(t) {
-  t = constrain(t, 0, 1);
-  let palette = [
-    color(0, 20, 120),
-    color(0, 180, 255),
-    color(0, 220, 120),
-    color(255, 230, 0),
-    color(255, 140, 0),
-    color(255, 40, 0),
-    color(255, 0, 120)
-  ];
-  let n = palette.length - 1;
-  let idx = t * n;
-  let i0 = floor(idx);
-  let i1 = min(i0 + 1, n);
-  let f = idx - i0;
-  return lerpColor(palette[i0], palette[i1], f);
+// -------- 每个物品自己的光圈颜色 --------
+function auraColorByIndex(index) {
+  if (index === 0) return color(255, 150, 80);   // 老干妈：暖橙红
+  if (index === 1) return color(255, 170, 210);  // 玩偶：柔粉
+  if (index === 2) return color(150, 210, 255);  // 拍立得：青蓝
+  if (index === 3) return color(255, 190, 200);  // 化妆袋：淡桃
+  if (index === 4) return color(150, 230, 210);  // 鼻炎喷雾：薄荷青
+  return color(255, 210, 160);                   // 创可贴：浅暖肤
 }
 
-// -------- 中间物件 + 热圈 + 扫描显现 --------
+// -------- 中间物件 + 空心柔光光圈 --------
 function drawHeatCore(item, index) {
   push();
-  translate(width / 2, height / 2); // ✅ 始终用 width/2, height/2 居中
+  translate(width / 2, height / 2);
   rectMode(CENTER);
-
-  let baseHeat = item.heat;
 
   // --- clip: 扫描线以下才可见 ---
   let ctx = drawingContext;
   ctx.save();
   ctx.beginPath();
-
   let visibleHeight = constrain(scanY, 0, height);
   ctx.rect(-width / 2, -height / 2, width, visibleHeight);
   ctx.clip();
 
   // ------- 物件本体 -------
-  if (index === 0) {
-    // ======= 老干妈（瘦一点、无粉色） =======
-    let bottleColor = color(160, 20, 20);
-    let chiliColor  = color(110, 0, 0);
-    let oilColor    = color(255, 220, 170, 180);
-    let capColor    = color(200, 40, 40);
-    let labelColor  = color(255, 200, 60, 230);
+  imageMode(CENTER);
+  if (index === 0)      image(imgLaoganma, 0, 40, 260, 260);
+  else if (index === 1) image(imgToy, 0, 20, 260, 260);
+  else if (index === 2) image(imgPolaroid, 0, 40, 260, 260);
+  else if (index === 3) image(imgHuazhuangdai, 0, 40, 260, 260);
+  else if (index === 4) image(imgBiyan, 0, 40, 260, 260);
+  else if (index === 5) image(imgChuangketie, 0, 40, 300, 260);
 
-    let bodyW = 110;
-    let bodyH = 260;
+  // -------- 空心柔光 Aura（加强版但仍然高级） --------
+  let baseCol = auraColorByIndex(index);
+  let baseR = 260;   // 起始半径
+  let rings = 6;     // 圈数
 
-    fill(bottleColor);
-    rect(0, 40, bodyW, bodyH, 40);
+  noFill();
+  for (let i = 0; i < rings; i++) {
+    let r = baseR + i * 26;
 
-    fill(chiliColor);
-    rect(0, 95, bodyW * 0.78, bodyH * 0.5, 28);
+    // 比之前亮一些，但不会刺眼
+    let alpha = map(i, 0, rings - 1, 80, 18);
+    let w = map(i, 0, rings - 1, 26, 10); // 内圈粗一点，外圈细一点
 
-    fill(oilColor);
-    ellipse(0, -5, bodyW * 0.8, 46);
-
-    fill(capColor);
-    rect(0, -60, bodyW * 0.45, 26, 6);
-
-    fill(labelColor);
-    rect(0, 35, bodyW * 0.85, bodyH * 0.25, 18);
-
-    fill(255, 220, 180, 150);
-    ellipse(0, 35, 22, 22);
-    fill(200, 130, 60, 90);
-    ellipse(0, 35, 10, 10);
-
-  } else if (index === 1) {
-    // 小狗娃娃
-    let furLight = color(255, 235, 245);
-    let furMid   = color(255, 190, 215);
-    let furDeep  = color(250, 150, 195);
-    let scarfCol = color(245, 110, 170);
-
-    fill(furLight);
-    ellipse(0, 85, 150, 170);
-    fill(furMid);
-    ellipse(0, 80, 120, 145);
-
-    fill(furLight);
-    ellipse(-45, 155, 60, 45);
-    ellipse(45, 155, 60, 45);
-
-    fill(furLight);
-    ellipse(-5, -10, 115, 105);
-
-    fill(furDeep);
-    ellipse(-70, -5, 70, 40);
-    ellipse(55, -20, 70, 45);
-
-    fill(255, 245, 250);
-    ellipse(-5, 5, 70, 50);
-
-    fill(furDeep);
-    ellipse(5, -2, 14, 12);
-
-    fill(80, 40, 70);
-    ellipse(-28, -18, 8, 8);
-    ellipse(20, -20, 8, 8);
-
-    noFill();
-    stroke(80, 40, 70);
-    strokeWeight(1.8);
-    arc(-2, 8, 30, 18, 0.1, PI - 0.1);
-    noStroke();
-
-    fill(scarfCol);
-    rect(-5, 30, 125, 26, 14);
-    rect(20, 70, 32, 85, 14);
-
-  } else if (index === 2) {
-    // 拍立得
-    let bodyCool = color(140, 190, 255);
-    let bodyDeep = color(60, 120, 220);
-    let glow     = color(210, 235, 255, 240);
-
-    fill(bodyCool);
-    let bodyW = 260;
-    let bodyH = 190;
-    rect(0, 20, bodyW, bodyH, 40);
-
-    fill(red(bodyDeep), green(bodyDeep), blue(bodyDeep), 170);
-    rect(0, 30, bodyW * 0.9, bodyH * 0.55, 30);
-
-    fill(glow);
-    rect(0, -60, bodyW * 0.6, 60, 20);
-
-    fill(230, 245, 255);
-    ellipse(-45, 18, 80, 80);
-    fill(80, 140, 230);
-    ellipse(-45, 18, 40, 40);
-
-    fill(220, 240, 255, 230);
-    rect(60, 55, 90, 30, 8);
-
-    fill(255, 250, 240, 235);
-    rect(60, 110, 80, 90, 10);
+    stroke(
+      red(baseCol),
+      green(baseCol),
+      blue(baseCol),
+      alpha
+    );
+    strokeWeight(w);
+    ellipse(0, 40, r, r * 0.95); // 稍微扁一点，更像摄影柔光
   }
 
+  // 还原
+  strokeWeight(1);
+  noStroke();
   ctx.restore();
-
-  // --- 热圈 halo ---
-  let steps = 130;
-  for (let i = 0; i < steps; i++) {
-    let angle = (TWO_PI / steps) * i;
-    let radius = 170 + noise(i * 0.12, frameCount * 0.01) * 45;
-    let t = 0.6 + sin(angle * 2 + frameCount * 0.03) * 0.2;
-    t *= baseHeat;
-
-    let hc = heatColor(t);
-    let alpha = map(t, 0, 1, 60, 200);
-    fill(red(hc), green(hc), blue(hc), alpha);
-
-    let w = 8;
-    let h = 26;
-    let x = cos(angle) * radius;
-    let y = sin(angle) * radius;
-
-    push();
-    translate(x, y);
-    rotate(angle);
-    rect(0, 0, w, h, 4);
-    pop();
-  }
-
   pop();
 }
 
@@ -257,8 +190,12 @@ function drawScanLine(index) {
 
   if (index === 0) baseC = color(255, 150, 40);
   else if (index === 1) baseC = color(255, 140, 210);
-  else baseC = color(140, 210, 255);
+  else if (index === 2) baseC = color(140, 210, 255);
+  else if (index === 3) baseC = color(255, 170, 190);
+  else if (index === 4) baseC = color(120, 220, 210);
+  else baseC = color(255, 200, 140);
 
+  strokeWeight(1);
   for (let y = scanY - lineHeight / 2; y < scanY + lineHeight / 2; y++) {
     let t = map(y, scanY - lineHeight / 2, scanY + lineHeight / 2, 0, 1);
     let alpha = t < 0.5 ? map(t, 0, 0.5, 0, 160) : map(t, 0.5, 1, 160, 0);
@@ -272,10 +209,8 @@ function drawScanLine(index) {
 function drawTexts(item) {
   let startY = height - 170;
 
-  // 若扫描线未扫到文字区域 → 不显示任何文字
   if (scanY < startY) return;
 
-  // 重绘底部渐变背景，避免文字叠加
   let topC, bottomC;
   if (currentIndex === 0) {
     topC = color(5, 10, 40);
@@ -283,9 +218,18 @@ function drawTexts(item) {
   } else if (currentIndex === 1) {
     topC = color(40, 0, 60);
     bottomC = color(200, 70, 140);
-  } else {
+  } else if (currentIndex === 2) {
     topC = color(0, 25, 70);
     bottomC = color(0, 130, 190);
+  } else if (currentIndex === 3) {
+    topC = color(60, 10, 50);
+    bottomC = color(230, 120, 150);
+  } else if (currentIndex === 4) {
+    topC = color(0, 30, 80);
+    bottomC = color(0, 160, 150);
+  } else {
+    topC = color(40, 15, 10);
+    bottomC = color(210, 140, 80);
   }
 
   for (let y = startY; y < height; y += 3) {
@@ -296,7 +240,6 @@ function drawTexts(item) {
   }
   noStroke();
 
-  // 文本内容
   fill(255);
   textAlign(LEFT, TOP);
   textSize(20);
@@ -308,17 +251,17 @@ function drawTexts(item) {
 
   textSize(13);
   textAlign(RIGHT, BOTTOM);
-  text("Press 1–3 to scan different objects", width - 40, height - 20);
+  text("Press 1–6 to scan different objects", width - 40, height - 20);
 }
 
 // -------- 切换物件 --------
 function keyPressed() {
-  if (key === '1') {
-    currentIndex = 0;
-  } else if (key === '2') {
-    currentIndex = 1;
-  } else if (key === '3') {
-    currentIndex = 2;
-  }
-  scanY = -80; // 重置扫描线
+  if (key === '1') currentIndex = 0;
+  else if (key === '2') currentIndex = 1;
+  else if (key === '3') currentIndex = 2;
+  else if (key === '4') currentIndex = 3;
+  else if (key === '5') currentIndex = 4;
+  else if (key === '6') currentIndex = 5;
+
+  scanY = -80;
 }
