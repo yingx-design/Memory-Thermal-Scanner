@@ -4,31 +4,37 @@
 let items = [
   {
     name: "Chili Sauce",
+    tag: "Taste · Home",
     heat: 1.0,
     text: "The moment I open this can and breathe its familiar spicy warmth, I'm reminded of home in the simplest, most reliable way."
   },
   {
     name: "Doll",
+    tag: "Companionship · Night",
     heat: 0.8,
     text: "Since 2022, she’s been my silent bedside companion—steady, wordless, and always there when I reach out in a place that never quite feels like home."
   },
   {
     name: "Polaroid camera",
+    tag: "Memory · Snapshot",
     heat: 0.7,
     text: "She captures not scenery but small, precious moments—faces, meals, smiles—that I hope will one day become the quiet backups of my future memories."
   },
   {
     name: "Makeup bag",
+    tag: "Surface · Self-image",
     heat: 0.65,
     text: "Stuffed with brushes, colors, and tiny tools, it’s the first thing I reach for when I need to rebuild a version of myself before going out into a new city."
   },
   {
     name: "Nasal spray",
+    tag: "Care · Health",
     heat: 0.55,
     text: "It sits quietly on my desk, half medical, half emotional—a small reminder that even in a foreign place, I’m still being taken care of in the ways I’m used to."
   },
   {
     name: "Bandage strips",
+    tag: "Repair · Protection",
     heat: 0.6,
     text: "They patch up small cuts and blisters from rushing between two lives, tiny squares of care that travel with me wherever I go."
   }
@@ -71,6 +77,7 @@ function draw() {
   drawThermalBackground(currentIndex);
   drawHeatCore(item, currentIndex);
   drawScanLine(currentIndex);
+  drawHeader();
   drawTexts(item);
 }
 
@@ -150,18 +157,19 @@ function drawHeatCore(item, index) {
   else if (index === 4) image(imgBiyan, 0, 40, 260, 260);
   else if (index === 5) image(imgChuangketie, 0, 40, 300, 260);
 
-  // -------- 空心柔光 Aura（加强版但仍然高级） --------
+  // -------- 空心柔光 Aura（稍微有呼吸感） --------
   let baseCol = auraColorByIndex(index);
   let baseR = 260;   // 起始半径
   let rings = 6;     // 圈数
 
   noFill();
   for (let i = 0; i < rings; i++) {
-    let r = baseR + i * 26;
+    // 轻微呼吸：随时间微小变化
+    let breathing = sin(frameCount * 0.02 + i * 0.4) * 4;
+    let r = baseR + i * 26 + breathing;
 
-    // 比之前亮一些，但不会刺眼
     let alpha = map(i, 0, rings - 1, 80, 18);
-    let w = map(i, 0, rings - 1, 26, 10); // 内圈粗一点，外圈细一点
+    let w = map(i, 0, rings - 1, 26, 10);
 
     stroke(
       red(baseCol),
@@ -170,7 +178,7 @@ function drawHeatCore(item, index) {
       alpha
     );
     strokeWeight(w);
-    ellipse(0, 40, r, r * 0.95); // 稍微扁一点，更像摄影柔光
+    ellipse(0, 40, r, r * 0.95);
   }
 
   // 还原
@@ -203,6 +211,18 @@ function drawScanLine(index) {
     line(0, y, width, y);
   }
   noStroke();
+}
+
+// -------- 左上角标题 / 项目信息 --------
+function drawHeader() {
+  fill(255, 230);
+  textAlign(LEFT, TOP);
+  textSize(18);
+  text("Memory Thermal Scanner", 32, 22);
+
+  fill(255, 200);
+  textSize(12);
+  text("Scanning small objects that carry home across distance.", 32, 46);
 }
 
 // -------- 文本（随扫描显现） --------
@@ -240,15 +260,24 @@ function drawTexts(item) {
   }
   noStroke();
 
+  // 物件名称
   fill(255);
   textAlign(LEFT, TOP);
   textSize(20);
   text("Object: " + item.name, 40, startY + 10);
 
+  // 小标签（tag）
+  textSize(13);
+  fill(220, 220, 240);
+  text(item.tag, 40, startY + 38);
+
+  // 叙述文本
+  fill(255);
   textSize(16);
   textWrap(WORD);
-  text(item.text, 40, startY + 45, width - 80);
+  text(item.text, 40, startY + 60, width - 80);
 
+  // 底部提示
   textSize(13);
   textAlign(RIGHT, BOTTOM);
   text("Press 1–6 to scan different objects", width - 40, height - 20);
@@ -265,3 +294,4 @@ function keyPressed() {
 
   scanY = -80;
 }
+
